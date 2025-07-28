@@ -1,0 +1,102 @@
+{
+  "system": {
+    "platform_name": "综合运维平台",
+    "version": "1.0.0",
+    "timezone": "Asia/Shanghai",
+    "language": "zh-CN",
+    "theme": "dark",
+    "auto_refresh": true,
+    "refresh_interval": 30
+  },
+  "monitoring": {
+    "elk": {
+      "elasticsearch_url": "http://100.64.0.150:9200",
+      "enabled": true,
+      "kibana_url": "http://100.64.0.150:5601",
+      "logstash_url": "http://100.64.0.150:5044"
+    },
+    "grafana": {
+      "api_key": "",
+      "enabled": false,
+      "url": "http://localhost:3000"
+    },
+    "prometheus": {
+      "enabled": true,
+      "timeout": 30,
+      "url": "http://100.64.0.5:9090"
+    },
+    "url": "http://100.64.0.4:9090"
+  },
+  "alerts": {
+    "email": {
+      "enabled": true,
+      "smtp_server": "smtp.example.com",
+      "smtp_port": 587,
+      "username": "",
+      "password": "",
+      "from_email": "alerts@example.com"
+    },
+    "webhook": {
+      "enabled": false,
+      "url": "",
+      "timeout": 10
+    },
+    "dingtalk": {
+      "enabled": false,
+      "webhook_url": "",
+      "secret": ""
+    }
+  },
+  "security": {
+    "session_timeout": 3600,
+    "max_login_attempts": 5,
+    "password_policy": {
+      "min_length": 8,
+      "require_uppercase": true,
+      "require_lowercase": true,
+      "require_numbers": true,
+      "require_special_chars": true
+    }
+  },
+  "database": {
+    "type": "sqlite",
+    "host": "localhost",
+    "port": 5432,
+    "name": "ops_platform",
+    "username": "",
+    "password": ""
+  },
+  "last_updated": "2025-07-25T11:08:43.864707",
+  "custom_indices": [
+    {
+      "name": "dev-go-ope*",
+      "description": "微服务开发环境",
+      "created_at": "2025-07-25T15:18:16.659083"
+    },
+    {
+      "name": "dev-chat-php-opeai*",
+      "description": "php开发环境",
+      "created_at": "2025-07-25T15:32:27.692474"
+    },
+    {
+      "name": "dev-opeaipod*",
+      "description": "opeaipod开发环境",
+      "created_at": "2025-07-25T15:33:13.869332"
+    },
+    {
+      "name": "dev-pod-open-platform*",
+      "description": "开放平台pod开发环境",
+      "created_at": "2025-07-25T15:34:45.913092"
+    },
+    {
+      "name": "dev-xxai-api*",
+      "description": "xxai-api开发环境",
+      "created_at": "2025-07-25T16:38:03.309489"
+    },
+    {
+      "name": "dev-xxai-dendrite*",
+      "description": "xxai-dendrite开发环境",
+      "created_at": "2025-07-25T16:39:13.921182"
+    }
+  ]
+}
