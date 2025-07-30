@@ -3,7 +3,7 @@ import { Settings, CheckCircle, AlertCircle, XCircle, RefreshCw, Plus, BarChart3
 import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 // API配置
-const API_BASE_URL = 'http://localhost:8001/api';
+const API_BASE_URL = 'http://192.168.50.81:8001/api';
 
 interface Tool {
   id: string;
@@ -168,7 +168,7 @@ const ToolIntegration: React.FC = () => {
       if (configData.data.monitoring?.prometheus?.enabled) {
         toolsToCheck.push({
           name: 'Prometheus',
-          endpoint: configData.data.monitoring.prometheus.url || 'http://localhost:9090',
+          endpoint: configData.data.monitoring.prometheus.url || 'http://192.168.50.81:9090',
           type: 'monitoring'
         });
       }
@@ -176,12 +176,12 @@ const ToolIntegration: React.FC = () => {
       if (configData.data.monitoring?.elk?.enabled) {
         toolsToCheck.push({
           name: 'Elasticsearch',
-          endpoint: configData.data.monitoring.elk.elasticsearch_url || 'http://localhost:9200',
+          endpoint: configData.data.monitoring.elk.elasticsearch_url || 'http://192.168.50.81:9200',
           type: 'elk'
         });
         toolsToCheck.push({
           name: 'Kibana',
-          endpoint: configData.data.monitoring.elk.kibana_url || 'http://localhost:5601',
+          endpoint: configData.data.monitoring.elk.kibana_url || 'http://192.168.50.81:5601',
           type: 'elk'
         });
       }
@@ -189,7 +189,7 @@ const ToolIntegration: React.FC = () => {
       if (configData.data.monitoring?.grafana?.enabled) {
         toolsToCheck.push({
           name: 'Grafana',
-          endpoint: configData.data.monitoring.grafana.url || 'http://localhost:3000',
+          endpoint: configData.data.monitoring.grafana.url || 'http://192.168.50.81:3000',
           type: 'monitoring'
         });
       }
@@ -207,7 +207,7 @@ const ToolIntegration: React.FC = () => {
           name: 'Prometheus',
           type: '监控工具',
           category: 'monitoring',
-          endpoint: configData.data.monitoring.prometheus.url || 'http://localhost:9090',
+          endpoint: configData.data.monitoring.prometheus.url || 'http://192.168.50.81:9090',
           status: toolsStatus.prometheus?.status || 'disconnected',
           health: toolsStatus.prometheus?.health || 'error',
           version: toolsStatus.prometheus?.version || 'Unknown',
@@ -223,7 +223,7 @@ const ToolIntegration: React.FC = () => {
           name: 'Elasticsearch',
           type: '搜索引擎',
           category: 'elk',
-          endpoint: configData.data.monitoring.elk.elasticsearch_url || 'http://localhost:9200',
+          endpoint: configData.data.monitoring.elk.elasticsearch_url || 'http://192.168.50.81:9200',
           status: toolsStatus.elasticsearch?.status || 'disconnected',
           health: toolsStatus.elasticsearch?.health || 'error',
           version: toolsStatus.elasticsearch?.version || 'Unknown',
@@ -237,7 +237,7 @@ const ToolIntegration: React.FC = () => {
           name: 'Kibana',
           type: '数据可视化',
           category: 'elk',
-          endpoint: configData.data.monitoring.elk.kibana_url || 'http://localhost:5601',
+          endpoint: configData.data.monitoring.elk.kibana_url || 'http://192.168.50.81:5601',
           status: toolsStatus.kibana?.status || 'disconnected',
           health: toolsStatus.kibana?.health || 'error',
           version: toolsStatus.kibana?.version || 'Unknown',
@@ -253,7 +253,7 @@ const ToolIntegration: React.FC = () => {
           name: 'Grafana',
           type: '数据可视化',
           category: 'monitoring',
-          endpoint: configData.data.monitoring.grafana.url || 'http://localhost:3000',
+          endpoint: configData.data.monitoring.grafana.url || 'http://192.168.50.81:3000',
           status: toolsStatus.grafana?.status || 'disconnected',
           health: toolsStatus.grafana?.health || 'error',
           version: toolsStatus.grafana?.version || 'Unknown',

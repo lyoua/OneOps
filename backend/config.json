@@ -18,7 +18,7 @@
     "grafana": {
       "api_key": "",
       "enabled": false,
-      "url": "http://localhost:3000"
+      "url": "http://192.168.50.81:3000"
     },
     "prometheus": {
       "enabled": true,
@@ -60,7 +60,7 @@
   },
   "database": {
     "type": "sqlite",
-    "host": "localhost",
+    "host": "192.168.50.81",
     "port": 5432,
     "name": "ops_platform",
     "username": "",

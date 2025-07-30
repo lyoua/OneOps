@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Filter, Calendar, RefreshCw, Play, Pause, Settings, Download, ChevronDown, ChevronRight, Clock, Server, AlertTriangle, Info, XCircle } from 'lucide-react';
+import { configManager, getApiBaseUrl } from '../utils/config';
 
 // Kibana风格的API接口
 const kibanaAPI = {
@@ -13,7 +14,7 @@ const kibanaAPI = {
         }
       });
       
-      const response = await fetch(`/api/logs?${queryParams.toString()}`);
+      const response = await fetch(`${getApiBaseUrl()}/logs?${queryParams.toString()}`);
       const data = await response.json();
       return data;
     } catch (error) {
@@ -32,7 +33,7 @@ const kibanaAPI = {
         }
       });
       
-      const response = await fetch(`/api/logs/stream?${queryParams.toString()}`);
+      const response = await fetch(`${getApiBaseUrl()}/logs/stream?${queryParams.toString()}`);
       const data = await response.json();
       return data;
     } catch (error) {
@@ -44,7 +45,7 @@ const kibanaAPI = {
   // 获取索引列表
   getLogIndices: async () => {
     try {
-      const response = await fetch('/api/logs/indices');
+      const response = await fetch(`${getApiBaseUrl()}/logs/indices`);
       const data = await response.json();
       return data;
     } catch (error) {
@@ -56,7 +57,7 @@ const kibanaAPI = {
   // 获取自定义索引
   getCustomIndices: async () => {
     try {
-      const response = await fetch('http://localhost:8001/api/custom-indices');
+      const response = await fetch(`${getApiBaseUrl()}/custom-indices`);
       const data = await response.json();
       return data;
     } catch (error) {
@@ -68,7 +69,7 @@ const kibanaAPI = {
   // 获取配置
   getConfig: async () => {
     try {
-      const response = await fetch('/api/config');
+      const response = await fetch(`${getApiBaseUrl()}/config`);
       const data = await response.json();
       return data;
     } catch (error) {
@@ -210,9 +211,16 @@ const KibanaLogAnalysis: React.FC = () => {
   
   // 初始化
   useEffect(() => {
-    loadIndices();
-    loadCustomIndices();
-    loadData();
+    const initialize = async () => {
+      // 首先加载配置管理器设置
+      await configManager.loadConfig();
+      // 然后加载日志分析数据
+      loadIndices();
+      loadCustomIndices();
+      loadData();
+    };
+    
+    initialize();
   }, []);
   
   // 搜索参数变化时重新加载

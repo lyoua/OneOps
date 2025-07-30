@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Bell, Plus, Settings, Mail, MessageSquare, Phone, CheckCircle, AlertTriangle, XCircle, Clock, RefreshCw } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-
-// API配置
-const API_BASE_URL = 'http://localhost:8001/api';
+import { configManager, getApiBaseUrl } from '../utils/config';
 
 // 告警管理API
 const alertManagementAPI = {
   // 获取配置信息
   getConfig: async () => {
-    const response = await fetch(`${API_BASE_URL}/config`);
+    const response = await fetch(`${getApiBaseUrl()}/config`);
     if (!response.ok) throw new Error('Failed to fetch config');
     return response.json();
   },
@@ -21,42 +19,42 @@ const alertManagementAPI = {
     if (params.status && params.status !== 'all') queryParams.append('status', params.status);
     if (params.limit) queryParams.append('limit', params.limit.toString());
     
-    const response = await fetch(`${API_BASE_URL}/alerts?${queryParams}`);
+    const response = await fetch(`${getApiBaseUrl()}/alerts?${queryParams}`);
     if (!response.ok) throw new Error('Failed to fetch alerts');
     return response.json();
   },
 
   // 获取告警统计
   getAlertStats: async () => {
-    const response = await fetch(`${API_BASE_URL}/alerts/stats`);
+    const response = await fetch(`${getApiBaseUrl()}/alerts/stats`);
     if (!response.ok) throw new Error('Failed to fetch alert stats');
     return response.json();
   },
 
   // 获取告警趋势数据
   getAlertTrends: async (hours: number = 24) => {
-    const response = await fetch(`${API_BASE_URL}/alerts/trends?hours=${hours}`);
+    const response = await fetch(`${getApiBaseUrl()}/alerts/trends?hours=${hours}`);
     if (!response.ok) throw new Error('Failed to fetch alert trends');
     return response.json();
   },
 
   // 获取告警规则
   getAlertRules: async () => {
-    const response = await fetch(`${API_BASE_URL}/alert-rules`);
+    const response = await fetch(`${getApiBaseUrl()}/alert-rules`);
     if (!response.ok) throw new Error('Failed to fetch alert rules');
     return response.json();
   },
 
   // 获取通知渠道
   getNotificationChannels: async () => {
-    const response = await fetch(`${API_BASE_URL}/notification-channels`);
+    const response = await fetch(`${getApiBaseUrl()}/notification-channels`);
     if (!response.ok) throw new Error('Failed to fetch notification channels');
     return response.json();
   },
 
   // 确认告警
   acknowledgeAlert: async (alertId: string) => {
-    const response = await fetch(`${API_BASE_URL}/alerts/${alertId}/acknowledge`, {
+    const response = await fetch(`${getApiBaseUrl()}/alerts/${alertId}/acknowledge`, {
       method: 'POST',
     });
     if (!response.ok) throw new Error('Failed to acknowledge alert');
@@ -65,7 +63,7 @@ const alertManagementAPI = {
 
   // 解决告警
   resolveAlert: async (alertId: string) => {
-    const response = await fetch(`${API_BASE_URL}/alerts/${alertId}/resolve`, {
+    const response = await fetch(`${getApiBaseUrl()}/alerts/${alertId}/resolve`, {
       method: 'POST',
     });
     if (!response.ok) throw new Error('Failed to resolve alert');
@@ -74,7 +72,7 @@ const alertManagementAPI = {
 
   // 测试通知渠道
   testNotificationChannel: async (channelId: string) => {
-    const response = await fetch(`${API_BASE_URL}/notification-channels/${channelId}/test`, {
+    const response = await fetch(`${getApiBaseUrl()}/notification-channels/${channelId}/test`, {
       method: 'POST',
     });
     if (!response.ok) throw new Error('Failed to test notification channel');
@@ -179,7 +177,14 @@ const AlertManagement: React.FC = () => {
 
   // 初始化数据加载
   useEffect(() => {
-    loadData();
+    const initialize = async () => {
+      // 首先加载配置管理器设置
+      await configManager.loadConfig();
+      // 然后加载告警管理数据
+      loadData();
+    };
+    
+    initialize();
   }, []);
 
   // 当过滤条件改变时重新加载告警数据

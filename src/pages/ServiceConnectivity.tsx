@@ -3,7 +3,7 @@ import { Wifi, WifiOff, Clock, CheckCircle, AlertTriangle, XCircle, Activity, Gl
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
 // API配置
-const API_BASE_URL = 'http://localhost:8001/api';
+const API_BASE_URL = 'http://192.168.50.81:8001/api';
 
 interface Service {
   id: string;

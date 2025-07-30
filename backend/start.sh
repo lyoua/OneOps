@@ -32,7 +32,7 @@ pip install -r requirements.txt
 
 # 启动Flask应用
 echo "启动Flask服务器..."
-echo "服务地址: http://localhost:8000"
+echo "服务地址: http://192.168.50.81:8000"
 echo "按 Ctrl+C 停止服务"
 echo "----------------------------------------"
 python app.py

@@ -1,12 +1,13 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Layout from "@/components/Layout";
 import Dashboard from "@/pages/Dashboard";
-import SystemMonitoring from "@/pages/SystemMonitoring";
+import MonitoringPanel from "@/pages/SystemMonitoring";
 import LogAnalysis from "@/pages/LogAnalysis";
 import AlertManagement from "@/pages/AlertManagement";
 import ServiceConnectivity from "@/pages/ServiceConnectivity";
 import ToolIntegration from "@/pages/ToolIntegration";
 import ConfigManagement from "@/pages/ConfigManagement";
+import { Toaster } from "sonner";
 
 export default function App() {
   return (
@@ -14,7 +15,7 @@ export default function App() {
       <Layout>
         <Routes>
           <Route path="/" element={<Dashboard />} />
-          <Route path="/monitoring" element={<SystemMonitoring />} />
+          <Route path="/monitoring" element={<MonitoringPanel />} />
           <Route path="/logs" element={<LogAnalysis />} />
           <Route path="/alerts" element={<AlertManagement />} />
           <Route path="/connectivity" element={<ServiceConnectivity />} />
@@ -22,6 +23,7 @@ export default function App() {
           <Route path="/config" element={<ConfigManagement />} />
         </Routes>
       </Layout>
+      <Toaster position="top-right" richColors />
     </Router>
   );
 }

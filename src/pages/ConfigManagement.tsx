@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Settings, Save, RotateCcw, Eye, EyeOff, RefreshCw, AlertCircle, CheckCircle, Database, FileText, Bell, Shield, Plus, Trash2, Edit3 } from 'lucide-react';
-
-// API配置
-const API_BASE_URL = 'http://localhost:8001/api';
+import { configManager, getApiBaseUrl, loadConfig, updateConfig, type AppConfig } from '../utils/config';
 
 // API调用函数
 const configAPI = {
   // 获取所有配置
   getConfig: async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/config`);
+      const response = await fetch(`${getApiBaseUrl()}/config`);
       const data = await response.json();
       return data;
     } catch (error) {
@@ -21,7 +19,7 @@ const configAPI = {
   // 更新配置
   updateConfig: async (config: any) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/config`, {
+      const response = await fetch(`${getApiBaseUrl()}/config`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -39,7 +37,7 @@ const configAPI = {
   // 更新配置节
   updateConfigSection: async (section: string, sectionData: any) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/config/section/${section}`, {
+      const response = await fetch(`${getApiBaseUrl()}/config/section/${section}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -57,7 +55,7 @@ const configAPI = {
   // 重置配置
   resetConfig: async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/config/reset`, {
+      const response = await fetch(`${getApiBaseUrl()}/config/reset`, {
         method: 'POST',
       });
       const data = await response.json();
@@ -71,7 +69,7 @@ const configAPI = {
   // 健康检查
   healthCheck: async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/health`);
+      const response = await fetch(`${getApiBaseUrl()}/health`);
       const data = await response.json();
       return data;
     } catch (error) {
@@ -83,7 +81,7 @@ const configAPI = {
   // 自定义索引管理API
   getCustomIndices: async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/custom-indices`);
+      const response = await fetch(`${getApiBaseUrl()}/custom-indices`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -97,7 +95,7 @@ const configAPI = {
 
   addCustomIndex: async (name: string, description: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/custom-indices`, {
+      const response = await fetch(`${getApiBaseUrl()}/custom-indices`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -117,7 +115,7 @@ const configAPI = {
 
   updateCustomIndex: async (name: string, description: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/custom-indices/${name}`, {
+      const response = await fetch(`${getApiBaseUrl()}/custom-indices/${name}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -137,7 +135,7 @@ const configAPI = {
 
   deleteCustomIndex: async (name: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/custom-indices/${name}`, {
+      const response = await fetch(`${getApiBaseUrl()}/custom-indices/${name}`, {
         method: 'DELETE',
       });
       if (!response.ok) {
@@ -154,7 +152,7 @@ const configAPI = {
   // 自定义索引状态管理API
   getCustomIndexStatus: async (name: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/custom-indices/${name}/status`);
+      const response = await fetch(`${getApiBaseUrl()}/custom-indices/${name}/status`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -168,7 +166,7 @@ const configAPI = {
 
   updateCustomIndexStatus: async (name: string, status: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/custom-indices/${name}/status`, {
+      const response = await fetch(`${getApiBaseUrl()}/custom-indices/${name}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -510,9 +508,16 @@ const ConfigManagement: React.FC = () => {
   };
 
   useEffect(() => {
-    checkBackendStatus();
-    loadConfig();
-    loadCustomIndices();
+    const initialize = async () => {
+      // 首先加载配置管理器设置
+      await configManager.loadConfig();
+      // 然后检查后端状态和加载应用配置
+      checkBackendStatus();
+      loadConfig();
+      loadCustomIndices();
+    };
+    
+    initialize();
   }, []);
 
   if (loading) {

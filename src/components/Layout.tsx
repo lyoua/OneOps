@@ -30,7 +30,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       current: location.pathname === '/'
     },
     {
-      name: '系统监控',
+      name: '监控面板',
       href: '/monitoring',
       icon: Activity,
       current: location.pathname === '/monitoring'

@@ -3,9 +3,29 @@ from flask_cors import CORS
 import json
 import os
 from datetime import datetime
+from sqlalchemy.orm import sessionmaker
+from models import (
+    engine, SessionLocal, get_db, init_database,
+    Dashboard as DashboardModel,
+    Variable as VariableModel,
+    SavedQuery as SavedQueryModel,
+    DashboardTemplate as DashboardTemplateModel,
+    VariableValue as VariableValueModel
+)
+from enhanced_data_service import get_enhanced_data_service
 
 app = Flask(__name__)
 CORS(app)  # 允许跨域请求
+
+# 初始化数据库
+try:
+    init_database()
+    print("数据库初始化成功")
+except Exception as e:
+    print(f"数据库初始化失败: {e}")
+
+# 获取增强数据服务实例
+enhanced_data_service = get_enhanced_data_service()
 
 # 配置文件路径
 CONFIG_FILE = 'config.json'
@@ -24,18 +44,18 @@ DEFAULT_CONFIG = {
     "monitoring": {
         "prometheus": {
             "enabled": True,
-            "url": "http://localhost:9090",
+            "url": "http://192.168.50.81:9090",
             "timeout": 30
         },
         "elk": {
             "enabled": True,
-            "elasticsearch_url": "http://localhost:9200",
-            "kibana_url": "http://localhost:5601",
-            "logstash_url": "http://localhost:5044"
+            "elasticsearch_url": "http://192.168.50.81:9200",
+        "kibana_url": "http://192.168.50.81:5601",
+        "logstash_url": "http://192.168.50.81:5044"
         },
         "grafana": {
             "enabled": False,
-            "url": "http://localhost:3000",
+            "url": "http://192.168.50.81:3000",
             "api_key": ""
         }
     },
@@ -72,7 +92,7 @@ DEFAULT_CONFIG = {
     },
     "database": {
         "type": "sqlite",
-        "host": "localhost",
+        "host": "192.168.50.81",
         "port": 5432,
         "name": "ops_platform",
         "username": "",
@@ -711,12 +731,15 @@ def get_log_indices():
                     "message": f"Elasticsearch查询失败: {response.status_code}"
                 }), 500
                 
-        except requests.exceptions.RequestException as e:
-            return jsonify({
-                "success": False,
-                "data": None,
-                "message": f"连接Elasticsearch失败: {str(e)}"
-            }), 500
+        except Exception as req_e:
+            if 'requests' in str(type(req_e)) or hasattr(req_e, '__module__') and 'requests' in str(req_e.__module__):
+                return jsonify({
+                    "success": False,
+                    "data": None,
+                    "message": f"连接Elasticsearch失败: {str(req_e)}"
+                }), 500
+            else:
+                raise req_e
         
     except Exception as e:
         return jsonify({
@@ -756,9 +779,9 @@ def get_log_stream():
         size = int(request.args.get('size', 100))
         from_timestamp = request.args.get('from', 'now-5m')
         
+        import requests
+        
         try:
-            import requests
-            
             # 构建Elasticsearch查询
             query_body = {
                 "size": size,
@@ -837,12 +860,15 @@ def get_log_stream():
                     "message": f"Elasticsearch查询失败: {response.status_code}"
                 }), 500
                 
-        except requests.exceptions.RequestException as e:
-            return jsonify({
-                "success": False,
-                "data": None,
-                "message": f"连接Elasticsearch失败: {str(e)}"
-            }), 500
+        except Exception as req_e:
+            if 'requests' in str(type(req_e)) or hasattr(req_e, '__module__') and 'requests' in str(req_e.__module__):
+                return jsonify({
+                    "success": False,
+                    "data": None,
+                    "message": f"连接Elasticsearch失败: {str(req_e)}"
+                }), 500
+            else:
+                raise req_e
         
     except Exception as e:
         return jsonify({
@@ -972,12 +998,15 @@ def get_logs():
                     "message": f"Elasticsearch查询失败: {response.status_code}"
                 }), 500
                 
-        except requests.exceptions.RequestException as e:
-            return jsonify({
-                "success": False,
-                "data": None,
-                "message": f"连接Elasticsearch失败: {str(e)}"
-            }), 500
+        except Exception as req_e:
+            if 'requests' in str(type(req_e)) or hasattr(req_e, '__module__') and 'requests' in str(req_e.__module__):
+                return jsonify({
+                    "success": False,
+                    "data": None,
+                    "message": f"连接Elasticsearch失败: {str(req_e)}"
+                }), 500
+            else:
+                raise req_e
         
     except Exception as e:
         return jsonify({
@@ -1009,9 +1038,9 @@ def get_log_stats():
                 "message": "Elasticsearch URL未配置，请在配置管理中设置"
             }), 400
         
+        import requests
+        
         try:
-            import requests
-            
             # 获取查询参数
             time_range = request.args.get('time_range', '24h')
             index_pattern = request.args.get('index', 'logstash-*')
@@ -1094,12 +1123,15 @@ def get_log_stats():
                     "message": f"Elasticsearch查询失败: {response.status_code}"
                 }), 500
                 
-        except requests.exceptions.RequestException as e:
-            return jsonify({
-                "success": False,
-                "data": None,
-                "message": f"连接Elasticsearch失败: {str(e)}"
-            }), 500
+        except Exception as req_e:
+            if 'requests' in str(type(req_e)) or hasattr(req_e, '__module__') and 'requests' in str(req_e.__module__):
+                return jsonify({
+                    "success": False,
+                    "data": None,
+                    "message": f"连接Elasticsearch失败: {str(req_e)}"
+                }), 500
+            else:
+                raise req_e
         
     except Exception as e:
         return jsonify({
@@ -1131,10 +1163,10 @@ def get_log_trends():
                 "message": "Elasticsearch URL未配置，请在配置管理中设置"
             }), 400
         
+        import requests
+        from datetime import datetime, timedelta
+        
         try:
-            import requests
-            from datetime import datetime, timedelta
-            
             # 获取查询参数
             time_range = request.args.get('time_range', '24h')
             index_pattern = request.args.get('index', 'logstash-*')
@@ -1278,9 +1310,9 @@ def get_system_metrics():
         # 获取查询参数
         query_type = request.args.get('query_type', 'node_exporter')
         
+        import requests
+        
         try:
-            import requests
-            
             # 根据查询类型构建不同的查询
             if query_type == 'cadvisor':
                 cpu_query = 'rate(container_cpu_usage_seconds_total[5m]) * 100'
@@ -1323,9 +1355,10 @@ def get_system_metrics():
                 "message": "系统指标获取成功"
             })
             
-        except requests.exceptions.RequestException:
-            # 如果Prometheus不可用，返回模拟数据
-            import random
+        except Exception as req_e:
+            if 'requests' in str(type(req_e)) or hasattr(req_e, '__module__') and 'requests' in str(req_e.__module__):
+                # 如果Prometheus不可用，返回模拟数据
+                import random
             return jsonify({
                 "success": True,
                 "data": {
@@ -1376,7 +1409,7 @@ def check_single_service():
                 "message": "服务检查完成"
             })
             
-        except requests.exceptions.RequestException as e:
+        except Exception as e:
             response_time = int((time.time() - start_time) * 1000)
             return jsonify({
                 "success": False,
@@ -1431,31 +1464,31 @@ def batch_check_services():
                     "uptime": 99.9 if response.status_code == 200 else 95.0
                 }
                 
-            except requests.exceptions.Timeout:
-                latency = int((time.time() - start_time) * 1000)
-                return {
-                    **service,
-                    "status": "warning",
-                    "latency": latency,
-                    "status_code": 0,
-                    "response_time": latency,
-                    "last_check": datetime.now().isoformat(),
-                    "uptime": 90.0,
-                    "error": "请求超时"
-                }
-                
-            except Exception as e:
-                latency = int((time.time() - start_time) * 1000)
-                return {
-                    **service,
-                    "status": "offline",
-                    "latency": 0,
-                    "status_code": 0,
-                    "response_time": latency,
-                    "last_check": datetime.now().isoformat(),
-                    "uptime": 0.0,
-                    "error": str(e)
-                }
+            except Exception as timeout_e:
+                if 'timeout' in str(timeout_e).lower() or 'Timeout' in str(type(timeout_e)):
+                    latency = int((time.time() - start_time) * 1000)
+                    return {
+                        **service,
+                        "status": "warning",
+                        "latency": latency,
+                        "status_code": 0,
+                        "response_time": latency,
+                        "last_check": datetime.now().isoformat(),
+                        "uptime": 90.0,
+                        "error": "请求超时"
+                    }
+                else:
+                    latency = int((time.time() - start_time) * 1000)
+                    return {
+                        **service,
+                        "status": "offline",
+                        "latency": 0,
+                        "status_code": 0,
+                        "response_time": latency,
+                        "last_check": datetime.now().isoformat(),
+                        "uptime": 0.0,
+                        "error": str(timeout_e)
+                    }
         
         services = data['services']
         
@@ -1637,6 +1670,623 @@ def update_custom_index(index_name):
             "message": f"更新自定义索引失败: {str(e)}"
         }), 500
 
+# ==================== 数据库持久化 API ====================
+
+@app.route('/api/dashboards', methods=['GET'])
+def get_dashboards():
+    """获取所有仪表板"""
+    try:
+        dashboards = enhanced_data_service.get_dashboards()
+        
+        return jsonify({
+            "success": True,
+            "data": dashboards,
+            "message": "获取仪表板列表成功"
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "data": None,
+            "message": f"获取仪表板列表失败: {str(e)}"
+        }), 500
+
+@app.route('/api/dashboards', methods=['POST'])
+def create_dashboard():
+    """创建仪表板"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                "success": False,
+                "data": None,
+                "message": "请提供仪表板数据"
+            }), 400
+        
+        dashboard = enhanced_data_service.create_dashboard(data)
+        
+        return jsonify({
+            "success": True,
+            "data": dashboard,
+            "message": "仪表板创建成功"
+        })
+        
+    except ValueError as ve:
+        return jsonify({
+            "success": False,
+            "data": None,
+            "message": str(ve)
+        }), 400
+    except Exception as e:
+        print(f"创建仪表板失败: {str(e)}")
+        return jsonify({
+            "success": False,
+            "data": None,
+            "message": f"创建仪表板失败: {str(e)}"
+        }), 500
+
+@app.route('/api/dashboards/<dashboard_id>', methods=['GET'])
+def get_dashboard(dashboard_id):
+    """获取单个仪表板"""
+    try:
+        dashboard = enhanced_data_service.get_dashboard_by_id(dashboard_id)
+        
+        if not dashboard:
+            return jsonify({
+                "success": False,
+                "data": None,
+                "message": f"仪表板 {dashboard_id} 不存在"
+            }), 404
+        
+        return jsonify({
+            "success": True,
+            "data": dashboard,
+            "message": "获取仪表板成功"
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "data": None,
+            "message": f"获取仪表板失败: {str(e)}"
+        }), 500
+
+@app.route('/api/dashboards/<dashboard_id>', methods=['PUT'])
+def update_dashboard(dashboard_id):
+    """更新仪表板"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                "success": False,
+                "data": None,
+                "message": "请提供更新数据"
+            }), 400
+        
+        dashboard = enhanced_data_service.update_dashboard(dashboard_id, data)
+        
+        return jsonify({
+            "success": True,
+            "data": dashboard,
+            "message": "仪表板更新成功"
+        })
+        
+    except ValueError as ve:
+        return jsonify({
+            "success": False,
+            "data": None,
+            "message": str(ve)
+        }), 404 if "不存在" in str(ve) else 400
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "data": None,
+            "message": f"更新仪表板失败: {str(e)}"
+        }), 500
+
+@app.route('/api/dashboards/<dashboard_id>', methods=['DELETE'])
+def delete_dashboard(dashboard_id):
+    """删除仪表板"""
+    try:
+        success = enhanced_data_service.delete_dashboard(dashboard_id)
+        
+        if success:
+            return jsonify({
+                "success": True,
+                "data": {"id": dashboard_id},
+                "message": "仪表板删除成功"
+            })
+        else:
+            return jsonify({
+                "success": False,
+                "data": None,
+                "message": "删除仪表板失败"
+            }), 500
+        
+    except ValueError as ve:
+        return jsonify({
+            "success": False,
+            "data": None,
+            "message": str(ve)
+        }), 404
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "data": None,
+            "message": f"删除仪表板失败: {str(e)}"
+        }), 500
+
+@app.route('/api/variables', methods=['GET'])
+def get_variables():
+    """获取变量列表"""
+    try:
+        dashboard_id = request.args.get('dashboard_id')
+        variables = enhanced_data_service.get_variables(dashboard_id)
+        
+        return jsonify({
+            "success": True,
+            "data": variables,
+            "message": "获取变量列表成功"
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "data": None,
+            "message": f"获取变量列表失败: {str(e)}"
+        }), 500
+
+@app.route('/api/variables', methods=['POST'])
+def create_variable():
+    """创建变量"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                "success": False,
+                "data": None,
+                "message": "请提供变量数据"
+            }), 400
+        
+        variable = enhanced_data_service.create_variable(data)
+        
+        return jsonify({
+            "success": True,
+            "data": variable,
+            "message": "变量创建成功"
+        })
+        
+    except ValueError as ve:
+        return jsonify({
+            "success": False,
+            "data": None,
+            "message": str(ve)
+        }), 400
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "data": None,
+            "message": f"创建变量失败: {str(e)}"
+        }), 500
+
+@app.route('/api/variables/<variable_id>', methods=['PUT'])
+def update_variable(variable_id):
+    """更新变量"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                "success": False,
+                "data": None,
+                "message": "请提供更新数据"
+            }), 400
+        
+        variable = enhanced_data_service.update_variable(variable_id, data)
+        
+        return jsonify({
+            "success": True,
+            "data": variable,
+            "message": "变量更新成功"
+        })
+        
+    except ValueError as ve:
+        return jsonify({
+            "success": False,
+            "data": None,
+            "message": str(ve)
+        }), 404 if "不存在" in str(ve) else 400
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "data": None,
+            "message": f"更新变量失败: {str(e)}"
+        }), 500
+
+@app.route('/api/variables/<variable_id>', methods=['DELETE'])
+def delete_variable(variable_id):
+    """删除变量"""
+    try:
+        success = enhanced_data_service.delete_variable(variable_id)
+        
+        if success:
+            return jsonify({
+                "success": True,
+                "data": {"id": variable_id},
+                "message": "删除变量成功"
+            })
+        else:
+            return jsonify({
+                "success": False,
+                "data": None,
+                "message": "删除变量失败"
+            }), 500
+        
+    except ValueError as ve:
+        return jsonify({
+            "success": False,
+            "data": None,
+            "message": str(ve)
+        }), 404
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "data": None,
+            "message": f"删除变量失败: {str(e)}"
+        }), 500
+
+@app.route('/api/variable-values', methods=['GET', 'POST'])
+def handle_variable_values():
+    """处理变量值的获取和保存"""
+    if request.method == 'GET':
+        # 获取变量值
+        try:
+            dashboard_id = request.args.get('dashboard_id')
+            variable_values = enhanced_data_service.get_variable_values(dashboard_id)
+            
+            return jsonify({
+                "success": True,
+                "data": variable_values,
+                "message": "获取变量值成功"
+            })
+            
+        except Exception as e:
+            return jsonify({
+                "success": False,
+                "data": None,
+                "message": f"获取变量值失败: {str(e)}"
+            }), 500
+    
+    elif request.method == 'POST':
+        # 保存变量值 (原有逻辑)
+        return save_variable_value_by_name()
+
+def save_variable_value_by_name():
+    """根据变量名保存变量值"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                "success": False,
+                "data": None,
+                "message": "请提供变量值数据"
+            }), 400
+        
+        variable_name = data.get('variable_name')
+        if not variable_name:
+            return jsonify({
+                "success": False,
+                "data": None,
+                "message": "请提供变量名称"
+            }), 400
+        
+        result = enhanced_data_service.save_variable_value(
+            variable_name=variable_name,
+            value=data.get('value'),
+            dashboard_id=data.get('dashboard_id'),
+            session_id=data.get('session_id')
+        )
+        
+        return jsonify({
+            "success": True,
+            "data": result,
+            "message": "变量值保存成功"
+        })
+        
+    except ValueError as e:
+        return jsonify({
+            "success": False,
+            "data": None,
+            "message": str(e)
+        }), 404
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "data": None,
+            "message": f"保存变量值失败: {str(e)}"
+        }), 500
+
+@app.route('/api/variables/<variable_id>/values', methods=['POST'])
+def save_variable_value(variable_id):
+    """保存变量值"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                "success": False,
+                "data": None,
+                "message": "请提供变量值数据"
+            }), 400
+        
+        # 先获取变量信息
+        variable = enhanced_data_service.get_variable_by_id(variable_id)
+        if not variable:
+            return jsonify({
+                "success": False,
+                "data": None,
+                "message": "变量不存在"
+            }), 404
+        
+        # 保存变量值
+        result = enhanced_data_service.save_variable_value(
+            variable_name=variable['name'],
+            value=data.get('value'),
+            dashboard_id=data.get('dashboard_id'),
+            session_id=data.get('session_id')
+        )
+        
+        # 同时更新变量的当前值
+        enhanced_data_service.update_variable(variable_id, {'value': data.get('value')})
+        
+        return jsonify({
+            "success": True,
+            "data": result,
+            "message": "变量值保存成功"
+        })
+        
+    except ValueError as ve:
+        return jsonify({
+            "success": False,
+            "data": None,
+            "message": str(ve)
+        }), 404
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "data": None,
+            "message": f"保存变量值失败: {str(e)}"
+        }), 500
+
+@app.route('/api/saved-queries', methods=['GET'])
+def get_saved_queries():
+    """获取保存的查询列表"""
+    try:
+        db = SessionLocal()
+        queries = db.query(SavedQueryModel).filter(SavedQueryModel.is_public == True).all()
+        
+        result = []
+        for query in queries:
+            result.append({
+                "id": query.id,
+                "name": query.name,
+                "query": query.query,
+                "description": query.description,
+                "tags": query.tags,
+                "created_at": query.created_at.isoformat() if query.created_at else None,
+                "updated_at": query.updated_at.isoformat() if query.updated_at else None
+            })
+        
+        db.close()
+        
+        return jsonify({
+            "success": True,
+            "data": result,
+            "message": "获取保存的查询列表成功"
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "data": None,
+            "message": f"获取保存的查询列表失败: {str(e)}"
+        }), 500
+
+@app.route('/api/saved-queries', methods=['POST'])
+def create_saved_query():
+    """创建保存的查询"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                "success": False,
+                "data": None,
+                "message": "请提供查询数据"
+            }), 400
+        
+        db = SessionLocal()
+        
+        # 生成ID（如果未提供）
+        query_id = data.get('id')
+        if not query_id:
+            import uuid
+            query_id = f"query_{uuid.uuid4().hex[:8]}"
+        
+        saved_query = SavedQueryModel(
+            id=query_id,
+            name=data.get('name'),
+            query=data.get('query'),
+            description=data.get('description', ''),
+            tags=data.get('tags', []),
+            is_public=data.get('is_public', True)
+        )
+        
+        db.add(saved_query)
+        db.commit()
+        db.refresh(saved_query)
+        db.close()
+        
+        return jsonify({
+            "success": True,
+            "data": {
+                "id": saved_query.id,
+                "name": saved_query.name,
+                "created_at": saved_query.created_at.isoformat()
+            },
+            "message": "保存查询成功"
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "data": None,
+            "message": f"保存查询失败: {str(e)}"
+        }), 500
+
+@app.route('/api/saved-queries/<query_id>', methods=['DELETE'])
+def delete_saved_query(query_id):
+    """删除保存的查询"""
+    try:
+        db = SessionLocal()
+        
+        query = db.query(SavedQueryModel).filter(SavedQueryModel.id == query_id).first()
+        if not query:
+            db.close()
+            return jsonify({
+                "success": False,
+                "data": None,
+                "message": "查询不存在"
+            }), 404
+        
+        db.delete(query)
+        db.commit()
+        db.close()
+        
+        return jsonify({
+            "success": True,
+            "data": {"id": query_id},
+            "message": "删除查询成功"
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "data": None,
+            "message": f"删除查询失败: {str(e)}"
+        }), 500
+
+# ==================== 仪表板模板 API ====================
+
+@app.route('/api/dashboard-templates', methods=['GET'])
+def get_dashboard_templates():
+    """获取仪表板模板列表"""
+    try:
+        templates = enhanced_data_service.get_templates()
+        
+        return jsonify({
+            "success": True,
+            "data": templates,
+            "message": "获取模板列表成功"
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "data": None,
+            "message": f"获取模板列表失败: {str(e)}"
+        }), 500
+
+@app.route('/api/dashboard-templates', methods=['POST'])
+def create_dashboard_template():
+    """创建仪表板模板"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                "success": False,
+                "data": None,
+                "message": "请提供模板数据"
+            }), 400
+        
+        template = enhanced_data_service.create_template(data)
+        
+        return jsonify({
+            "success": True,
+            "data": template,
+            "message": "模板创建成功"
+        })
+        
+    except ValueError as e:
+        return jsonify({
+            "success": False,
+            "data": None,
+            "message": str(e)
+        }), 400
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "data": None,
+            "message": f"创建模板失败: {str(e)}"
+        }), 500
+
+@app.route('/api/dashboard-templates/<template_id>', methods=['PUT'])
+def update_dashboard_template(template_id):
+    """更新仪表板模板"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                "success": False,
+                "data": None,
+                "message": "请提供更新数据"
+            }), 400
+        
+        template = enhanced_data_service.update_template(template_id, data)
+        
+        return jsonify({
+            "success": True,
+            "data": template,
+            "message": "模板更新成功"
+        })
+        
+    except ValueError as e:
+        return jsonify({
+            "success": False,
+            "data": None,
+            "message": str(e)
+        }), 404
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "data": None,
+            "message": f"更新模板失败: {str(e)}"
+        }), 500
+
+@app.route('/api/dashboard-templates/sync', methods=['POST'])
+def sync_dashboard_templates():
+    """批量同步前端模板到数据库"""
+    try:
+        data = request.get_json()
+        if not data or 'templates' not in data:
+            return jsonify({
+                "success": False,
+                "data": None,
+                "message": "请提供模板数据"
+            }), 400
+        
+        result = enhanced_data_service.batch_sync_templates(data['templates'])
+        
+        return jsonify({
+            "success": True,
+            "data": result,
+            "message": "模板同步成功"
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "data": None,
+            "message": f"模板同步失败: {str(e)}"
+        }), 500
+
 if __name__ == '__main__':
     import sys
     
@@ -1678,7 +2328,7 @@ if __name__ == '__main__':
     print("  GET  /api/logs/stream - 获取实时日志流")
     print("  GET  /api/logs/trends - 获取日志趋势数据")
     print("  GET  /api/system/metrics - 获取系统指标")
-    print(f"\n服务地址: http://localhost:{port}")
+    print(f"\n服务地址: http://192.168.50.81:{port}")
     
     try:
         app.run(host='0.0.0.0', port=port, debug=True)

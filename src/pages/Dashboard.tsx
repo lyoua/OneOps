@@ -3,7 +3,7 @@ import { Activity, Server, AlertTriangle, CheckCircle, Clock, Users, RefreshCw }
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 // API配置
-const API_BASE_URL = 'http://localhost:8001/api';
+const API_BASE_URL = 'http://192.168.50.81:8001/api';
 
 // API调用函数
 const dashboardAPI = {
